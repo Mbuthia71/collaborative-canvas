@@ -70,7 +70,7 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
       y: pointerPos.y,
       width: 100,
       height: 100,
-      fill: '#' + Math.floor(Math.random() * 16777215).toString(16),
+      fill: '#000000',
       stroke: '#000',
       strokeWidth: 2,
       rotation: 0,
