@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { getSupabase } from './supabase'
 import { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface UserPresence {
@@ -26,7 +26,7 @@ export class RealtimeSync {
 
   // Connect to Supabase Realtime
   async connect(): Promise<void> {
-    this.channel = supabase
+    this.channel = getSupabase()
       .channel(`canvas_${this.canvasId}`)
       .on(
         'postgres_changes',
@@ -69,7 +69,7 @@ export class RealtimeSync {
   // Update current user's presence (cursor position)
   async updatePresence(cursorX: number, cursorY: number): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('user_presence')
         .upsert({
           canvas_id: this.canvasId,
@@ -94,7 +94,7 @@ export class RealtimeSync {
   // Remove user presence on disconnect
   async removePresence(): Promise<void> {
     try {
-      const { error } = await supabase
+      const { error } = await getSupabase()
         .from('user_presence')
         .delete()
         .eq('canvas_id', this.canvasId)
@@ -119,7 +119,7 @@ export class RealtimeSync {
 
   // Get all current users in the canvas
   async getCurrentUsers(): Promise<UserPresence[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from('user_presence')
       .select('*')
       .eq('canvas_id', this.canvasId)
