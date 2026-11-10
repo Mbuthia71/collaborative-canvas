@@ -1,36 +1,105 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Collaborative Canvas
+
+A real-time collaborative canvas editor built with CRDTs (Conflict-free Replicated Data Types), Next.js, Supabase, and Konva.js.
+
+## Features
+
+- **Real-time collaboration** - Multiple users can edit the same canvas simultaneously
+- **CRDT-based sync** - Uses Yjs for conflict-free data replication
+- **Canvas editor** - Add rectangles, circles, and text
+- **Drag, resize, rotate** - Transform objects with the selection tool
+- **Real-time presence** - See other users' cursors
+- **Supabase backend** - Auth, database, and real-time sync
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React, TypeScript, TailwindCSS
+- **Canvas**: Konva.js, react-konva
+- **CRDT**: Yjs, y-websocket
+- **Backend**: Supabase (PostgreSQL, Realtime, Auth)
+- **Real-time**: Supabase Realtime for presence tracking
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Get your project URL and anon key from Supabase settings
+
+### Setup
+
+1. Clone the repository and install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Configure environment variables:
+```bash
+cp .env.local.example .env.local
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Edit `.env.local` with your Supabase credentials:
+```
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Run the database schema in Supabase SQL Editor:
+- Open your Supabase project
+- Go to SQL Editor
+- Copy and run the SQL from `supabase/schema.sql`
 
-## Learn More
+4. Start the development server:
+```bash
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+5. Open [http://localhost:3000](http://localhost:3000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Usage
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Enter a canvas ID to join or create a canvas
+2. Use the toolbar to select tools (Select, Rectangle, Circle, Text)
+3. Click on the canvas to add shapes
+4. Select objects to drag, resize, or rotate them
+5. Press Delete or Backspace to remove selected objects
+6. Share the canvas ID with others to collaborate in real-time
 
-## Deploy on Vercel
+## Database Schema
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The project uses three main tables:
+- `canvases` - Stores canvas metadata
+- `canvas_objects` - Stores individual canvas elements
+- `user_presence` - Tracks real-time user presence and cursors
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture
+
+### CRDT Integration
+- Yjs manages the collaborative state
+- Changes are automatically synced between clients
+- No central server needed for conflict resolution
+
+### Real-time Sync
+- Supabase Realtime handles WebSocket connections
+- User presence is tracked in real-time
+- Cursor positions are broadcast to all users
+
+### Canvas Rendering
+- Konva.js provides high-performance 2D canvas rendering
+- React-konva integrates Konva with React
+- Transformer component enables object manipulation
+
+## Future Enhancements
+
+- [ ] WebSocket server for Yjs sync (currently using local CRDT)
+- [ ] Image upload support
+- [ ] Layer management
+- [ ] Undo/redo functionality
+- [ ] Export to PNG/SVG
+- [ ] User authentication with Supabase Auth
+- [ ] Canvas permissions and sharing
+- [ ] Version history with event sourcing
+
+## License
+
+MIT
