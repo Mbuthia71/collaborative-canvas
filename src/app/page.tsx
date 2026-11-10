@@ -5,7 +5,7 @@ import CanvasEditor from '@/components/CanvasEditor'
 
 export default function Home() {
   const [canvasId, setCanvasId] = useState<string>('')
-  const [userId] = useState(() => `user_${Math.random().toString(36).substr(2, 9)}`)
+  const [userId] = useState(() => `user_${Math.random().toString(36).slice(2, 11)}`)
   const [userName] = useState(() => `User ${Math.floor(Math.random() * 1000)}`)
   const [userColor] = useState(() => 
     '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')
