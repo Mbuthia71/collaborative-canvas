@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Stage, Layer, Rect, Circle, Text, Transformer } from 'react-konva'
 import Konva from 'konva'
 import { CanvasObject, CanvasCRDT } from '@/lib/yjs'
@@ -85,7 +85,7 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
 
   // Handle object selection
   const handleObjectClick = (e: Konva.KonvaEventObject<MouseEvent>, id: string) => {
-    e.stopPropagation()
+    e.evt.stopPropagation()
     setSelectedId(id)
   }
 
@@ -204,7 +204,7 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
           height={window.innerHeight - 64}
           onClick={handleStageClick}
           onMouseMove={handleMouseMove}
-          onTap={handleStageClick}
+          onTap={handleStageClick as any}
         >
           <Layer>
             {objects.map((obj) => (
@@ -222,8 +222,8 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
                     rotation={obj.rotation}
                     draggable={tool === 'select'}
                     onClick={(e) => handleObjectClick(e, obj.id)}
-                    onDragEnd={(e) => handleDragEnd(e, obj.id)}
-                    onTransformEnd={(e) => handleTransformEnd(e, obj.id)}
+                    onDragEnd={(e) => handleDragEnd(e as any, obj.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e as any, obj.id)}
                   />
                 )}
                 {obj.type === 'circle' && (
@@ -238,8 +238,8 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
                     rotation={obj.rotation}
                     draggable={tool === 'select'}
                     onClick={(e) => handleObjectClick(e, obj.id)}
-                    onDragEnd={(e) => handleDragEnd(e, obj.id)}
-                    onTransformEnd={(e) => handleTransformEnd(e, obj.id)}
+                    onDragEnd={(e) => handleDragEnd(e as any, obj.id)}
+                    onTransformEnd={(e) => handleTransformEnd(e as any, obj.id)}
                   />
                 )}
                 {obj.type === 'text' && (
@@ -252,7 +252,7 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
                     fill={obj.fill}
                     draggable={tool === 'select'}
                     onClick={(e) => handleObjectClick(e, obj.id)}
-                    onDragEnd={(e) => handleDragEnd(e, obj.id)}
+                    onDragEnd={(e) => handleDragEnd(e as any, obj.id)}
                   />
                 )}
               </React.Fragment>
