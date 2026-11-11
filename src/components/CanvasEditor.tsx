@@ -17,11 +17,20 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
   const [objects, setObjects] = useState<CanvasObject[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [tool, setTool] = useState<'select' | 'rect' | 'circle' | 'text'>('select')
+  const [stageSize, setStageSize] = useState({ width: 0, height: 0 })
   
   const crdtRef = useRef<CanvasCRDT | null>(null)
   const realtimeRef = useRef<RealtimeSync | null>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const stageRef = useRef<Konva.Stage>(null)
+
+  // Initialize stage size on client
+  useEffect(() => {
+    setStageSize({
+      width: window.innerWidth,
+      height: window.innerHeight - 64
+    })
+  }, [])
 
   // Initialize CRDT and Realtime
   useEffect(() => {
@@ -43,13 +52,17 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
     const handlePresenceUpdate = (event: CustomEvent) => {
       console.log('Presence update:', event.detail)
     }
-    window.addEventListener('presence-update', handlePresenceUpdate as EventListener)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('presence-update', handlePresenceUpdate as EventListener)
+    }
 
     return () => {
       unsubscribe()
       realtimeRef.current?.disconnect()
       crdtRef.current?.destroy()
-      window.removeEventListener('presence-update', handlePresenceUpdate as EventListener)
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('presence-update', handlePresenceUpdate as EventListener)
+      }
     }
   }, [canvasId, userId, userName, userColor])
 
@@ -139,8 +152,10 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
         handleDelete()
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    if (typeof window !== 'undefined') {
+      window.addEventListener('keydown', handleKeyDown)
+      return () => window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [selectedId])
 
   // Attach transformer to selected node
@@ -200,8 +215,8 @@ export default function CanvasEditor({ canvasId, userId, userName, userColor }: 
       <div className="flex-1 bg-gray-100 overflow-hidden">
         <Stage
           ref={stageRef}
-          width={window.innerWidth}
-          height={window.innerHeight - 64}
+          width={stageSize.width}
+          height={stageSize.height}
           onClick={handleStageClick}
           onMouseMove={handleMouseMove}
           onTap={handleStageClick as any}

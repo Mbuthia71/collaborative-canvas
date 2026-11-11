@@ -21,6 +21,11 @@ export interface CanvasObject {
   lng?: number
   radius?: number
   positions?: [number, number][]
+  // User attribution
+  createdBy?: string
+  createdByColor?: string
+  createdAt?: string
+  updatedAt?: string
 }
 
 export class CanvasCRDT {
@@ -50,16 +55,33 @@ export class CanvasCRDT {
   }
 
   // Add a new object
-  addObject(object: CanvasObject): void {
+  addObject(object: CanvasObject, userId?: string, userColor?: string): void {
     const id = object.id || `obj_${Date.now()}`
-    this.objects.set(id, { ...object, id })
+    const now = new Date().toISOString()
+    this.objects.set(id, {
+      ...object,
+      id,
+      createdBy: userId,
+      createdByColor: userColor,
+      createdAt: now,
+      updatedAt: now
+    })
   }
 
   // Update an existing object
-  updateObject(id: string, updates: Partial<CanvasObject>): void {
+  updateObject(id: string, updates: Partial<CanvasObject>, userId?: string, userColor?: string): void {
     const existing = this.objects.get(id)
     if (existing) {
-      this.objects.set(id, { ...existing, ...updates })
+      const now = new Date().toISOString()
+      this.objects.set(id, {
+        ...existing,
+        ...updates,
+        updatedAt: now,
+        // Only update createdBy fields if not already set (preserve original creator)
+        createdBy: existing.createdBy || userId,
+        createdByColor: existing.createdByColor || userColor,
+        createdAt: existing.createdAt || now
+      })
     }
   }
 

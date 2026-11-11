@@ -5,6 +5,9 @@ import { MapContainer, TileLayer, Marker, Polygon, Circle, Popup, useMapEvents }
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { CanvasObject, CanvasCRDT } from '@/lib/yjs'
+import { ChangeHistoryTracker } from '@/lib/changeHistory'
+import ActivityFeed from './ActivityFeed'
+import UserPresenceIndicator from './UserPresence'
 
 // Fix for default marker icon in React Leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -44,9 +47,11 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
   const [polygonPoints, setPolygonPoints] = useState<[number, number][]>([])
   
   const crdtRef = useRef<CanvasCRDT | null>(null)
+  const changeHistoryRef = useRef<ChangeHistoryTracker | null>(null)
 
   useEffect(() => {
     crdtRef.current = new CanvasCRDT(canvasId)
+    changeHistoryRef.current = new ChangeHistoryTracker(canvasId, userId, userName, userColor)
     setObjects(crdtRef.current.getObjects() as GeoObject[])
 
     const unsubscribe = crdtRef.current.onObjectChange((updatedObjects) => {
@@ -57,7 +62,7 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
       unsubscribe()
       crdtRef.current?.destroy()
     }
-  }, [canvasId])
+  }, [canvasId, userId, userName, userColor])
 
   const handleMapClick = (lat: number, lng: number) => {
     if (tool === 'marker') {
@@ -71,7 +76,8 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
         fill: userColor,
         zIndex: objects.length
       }
-      crdtRef.current?.addObject(newObject)
+      crdtRef.current?.addObject(newObject, userId, userColor)
+      changeHistoryRef.current?.logChange(newObject.id, 'create', 'marker', newObject)
       setTool('select')
     } else if (tool === 'polygon') {
       setPolygonPoints([...polygonPoints, [lat, lng]])
@@ -87,7 +93,8 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
         fill: userColor,
         zIndex: objects.length
       }
-      crdtRef.current?.addObject(newObject)
+      crdtRef.current?.addObject(newObject, userId, userColor)
+      changeHistoryRef.current?.logChange(newObject.id, 'create', 'circle', newObject)
       setTool('select')
     }
   }
@@ -103,19 +110,40 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
         fill: userColor,
         zIndex: objects.length
       }
-      crdtRef.current?.addObject(newObject)
+      crdtRef.current?.addObject(newObject, userId, userColor)
+      changeHistoryRef.current?.logChange(newObject.id, 'create', 'polygon', newObject)
     }
     setPolygonPoints([])
     setTool('select')
   }
 
   const deleteObject = (id: string) => {
+    const obj = objects.find(o => o.id === id)
     crdtRef.current?.deleteObject(id)
+    if (obj) {
+      changeHistoryRef.current?.logChange(id, 'delete', obj.type, obj)
+    }
     setSelectedId(null)
   }
 
   return (
     <div className="flex flex-col h-screen">
+      {/* Presence Indicator */}
+      <UserPresenceIndicator
+        canvasId={canvasId}
+        userId={userId}
+        userName={userName}
+        userColor={userColor}
+      />
+
+      {/* Activity Feed */}
+      <ActivityFeed
+        canvasId={canvasId}
+        userId={userId}
+        userName={userName}
+        userColor={userColor}
+      />
+
       {/* Toolbar */}
       <div className="bg-gray-800 text-white p-4 flex gap-4 items-center">
         <button
@@ -188,6 +216,18 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
                       <strong>Marker</strong><br />
                       Lat: {obj.lat.toFixed(4)}<br />
                       Lng: {obj.lng.toFixed(4)}
+                      {obj.createdBy && (
+                        <>
+                          <br />
+                          <span style={{ color: obj.createdByColor }}>
+                            Created by: {obj.createdBy}
+                          </span>
+                          <br />
+                          <span className="text-xs text-gray-500">
+                            {obj.createdAt ? new Date(obj.createdAt).toLocaleString() : ''}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </Popup>
                 </Marker>
@@ -201,7 +241,27 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
                   eventHandlers={{
                     click: () => setSelectedId(obj.id)
                   }}
-                />
+                >
+                  <Popup>
+                    <div>
+                      <strong>Circle</strong><br />
+                      Center: {obj.lat.toFixed(4)}, {obj.lng.toFixed(4)}<br />
+                      Radius: {obj.radius}m
+                      {obj.createdBy && (
+                        <>
+                          <br />
+                          <span style={{ color: obj.createdByColor }}>
+                            Created by: {obj.createdBy}
+                          </span>
+                          <br />
+                          <span className="text-xs text-gray-500">
+                            {obj.createdAt ? new Date(obj.createdAt).toLocaleString() : ''}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </Popup>
+                </Circle>
               )}
               {obj.type === 'polygon' && obj.positions && (
                 <Polygon
@@ -211,7 +271,26 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
                   eventHandlers={{
                     click: () => setSelectedId(obj.id)
                   }}
-                />
+                >
+                  <Popup>
+                    <div>
+                      <strong>Polygon</strong><br />
+                      Points: {obj.positions.length}
+                      {obj.createdBy && (
+                        <>
+                          <br />
+                          <span style={{ color: obj.createdByColor }}>
+                            Created by: {obj.createdBy}
+                          </span>
+                          <br />
+                          <span className="text-xs text-gray-500">
+                            {obj.createdAt ? new Date(obj.createdAt).toLocaleString() : ''}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </Popup>
+                </Polygon>
               )}
             </React.Fragment>
           ))}
