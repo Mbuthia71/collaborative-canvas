@@ -8,6 +8,7 @@ const MapEditor = dynamic(() => import('@/components/MapEditor'), { ssr: false }
 
 export default function Home() {
   const [canvasId, setCanvasId] = useState<string>('')
+  const [hasJoined, setHasJoined] = useState<boolean>(false)
   const [userId, setUserId] = useState<string>('')
   const [userName, setUserName] = useState<string>('')
   const [userColor, setUserColor] = useState<string>('')
@@ -19,7 +20,13 @@ export default function Home() {
     setUserColor('#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0'))
   }, [])
 
-  if (!canvasId) {
+  const handleJoin = () => {
+    if (canvasId.trim()) {
+      setHasJoined(true)
+    }
+  }
+
+  if (!hasJoined) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
@@ -53,7 +60,7 @@ export default function Home() {
             autoFocus
           />
           <button
-            onClick={() => setCanvasId(canvasId || 'default-canvas')}
+            onClick={handleJoin}
             className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
           >
             Join Canvas
