@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { MapContainer, TileLayer, Marker, Polygon, Circle, Popup, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import { CanvasObject, CanvasCRDT } from '@/lib/yjs'
+import { CanvasObject, CanvasSync } from '@/lib/canvasSync'
 import { ChangeHistoryTracker } from '@/lib/changeHistory'
 import ActivityFeed from './ActivityFeed'
 import UserPresenceIndicator from './UserPresence'
@@ -46,21 +46,23 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [polygonPoints, setPolygonPoints] = useState<[number, number][]>([])
   
-  const crdtRef = useRef<CanvasCRDT | null>(null)
+  const syncRef = useRef<CanvasSync | null>(null)
   const changeHistoryRef = useRef<ChangeHistoryTracker | null>(null)
 
   useEffect(() => {
-    crdtRef.current = new CanvasCRDT(canvasId)
+    syncRef.current = new CanvasSync(canvasId)
     changeHistoryRef.current = new ChangeHistoryTracker(canvasId, userId, userName, userColor)
-    setObjects(crdtRef.current.getObjects() as GeoObject[])
+    
+    // Connect to Supabase Realtime
+    syncRef.current.connect()
 
-    const unsubscribe = crdtRef.current.onObjectChange((updatedObjects) => {
+    const unsubscribe = syncRef.current.onObjectChange((updatedObjects) => {
       setObjects(updatedObjects as GeoObject[])
     })
 
     return () => {
       unsubscribe()
-      crdtRef.current?.destroy()
+      syncRef.current?.destroy()
     }
   }, [canvasId, userId, userName, userColor])
 
@@ -76,7 +78,7 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
         fill: userColor,
         zIndex: objects.length
       }
-      crdtRef.current?.addObject(newObject, userId, userColor)
+      syncRef.current?.addObject(newObject, userId, userColor)
       changeHistoryRef.current?.logChange(newObject.id, 'create', 'marker', newObject)
       setTool('select')
     } else if (tool === 'polygon') {
@@ -93,7 +95,7 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
         fill: userColor,
         zIndex: objects.length
       }
-      crdtRef.current?.addObject(newObject, userId, userColor)
+      syncRef.current?.addObject(newObject, userId, userColor)
       changeHistoryRef.current?.logChange(newObject.id, 'create', 'circle', newObject)
       setTool('select')
     }
@@ -110,7 +112,7 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
         fill: userColor,
         zIndex: objects.length
       }
-      crdtRef.current?.addObject(newObject, userId, userColor)
+      syncRef.current?.addObject(newObject, userId, userColor)
       changeHistoryRef.current?.logChange(newObject.id, 'create', 'polygon', newObject)
     }
     setPolygonPoints([])
@@ -119,7 +121,7 @@ export default function MapEditor({ canvasId, userId, userName, userColor }: Map
 
   const deleteObject = (id: string) => {
     const obj = objects.find(o => o.id === id)
-    crdtRef.current?.deleteObject(id)
+    syncRef.current?.deleteObject(id)
     if (obj) {
       changeHistoryRef.current?.logChange(id, 'delete', obj.type, obj)
     }
