@@ -16,6 +16,7 @@ export class RealtimeSync {
   private userId: string
   private userName: string
   private userColor: string
+  private heartbeatInterval: NodeJS.Timeout | null = null
 
   constructor(canvasId: string, userId: string, userName: string, userColor: string) {
     this.canvasId = canvasId
@@ -44,6 +45,10 @@ export class RealtimeSync {
         if (status === 'SUBSCRIBED') {
           console.log('Connected to realtime channel')
           this.updatePresence(0, 0)
+          // Start heartbeat to keep user marked as online
+          this.heartbeatInterval = setInterval(() => {
+            this.updatePresence(0, 0)
+          }, 10000) // Update every 10 seconds
         }
       })
   }
@@ -110,6 +115,10 @@ export class RealtimeSync {
 
   // Disconnect from realtime channel
   disconnect(): void {
+    if (this.heartbeatInterval) {
+      clearInterval(this.heartbeatInterval)
+      this.heartbeatInterval = null
+    }
     if (this.channel) {
       this.channel.unsubscribe()
       this.channel = null
@@ -119,10 +128,13 @@ export class RealtimeSync {
 
   // Get all current users in the canvas
   async getCurrentUsers(): Promise<UserPresence[]> {
+    const thirtySecondsAgo = new Date(Date.now() - 30000).toISOString()
+    
     const { data, error } = await getSupabase()
       .from('user_presence')
       .select('*')
       .eq('canvas_id', this.canvasId)
+      .gt('last_seen', thirtySecondsAgo)
 
     if (error) {
       console.error('Error fetching users:', error)
