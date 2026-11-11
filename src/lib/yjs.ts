@@ -4,7 +4,7 @@ import { WebsocketProvider } from 'y-websocket'
 // Types for canvas objects
 export interface CanvasObject {
   id: string
-  type: 'rect' | 'circle' | 'text' | 'image'
+  type: 'rect' | 'circle' | 'text' | 'image' | 'marker' | 'polygon'
   x: number
   y: number
   width?: number
@@ -16,6 +16,11 @@ export interface CanvasObject {
   text?: string
   fontSize?: number
   zIndex?: number
+  // Geospatial properties
+  lat?: number
+  lng?: number
+  radius?: number
+  positions?: [number, number][]
 }
 
 export class CanvasCRDT {
